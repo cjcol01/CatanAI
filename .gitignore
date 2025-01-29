@@ -1,4 +1,6 @@
 explainers/*
+.DS_Store/*
+graphic_dice/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
