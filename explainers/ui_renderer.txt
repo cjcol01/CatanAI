@@ -1,0 +1,25 @@
+# UIRenderer.py
+
+UI component renderer for game interface elements.
+
+## Class: UIRenderer
+Renders:
+- Player information panels (resources, dev cards)
+- Game control buttons (end turn, placement mode)
+- Setup instructions and current player display
+
+## Key Methods
+- draw_player_info(): Player panels with resources
+- draw_end_turn_button(): Turn control
+- draw_placement_mode_button(): Building mode toggle
+- draw_setup_instructions(): Setup phase guidance
+- draw_current_player(): Active player indicator
+
+## Dependencies
+- pygame
+- .constants: Screen dimensions, colors, fonts
+- .enums: GameState
+
+Could be split into:
+- player_ui.py (player panels)
+- game_controls_ui.py (buttons and instructions)

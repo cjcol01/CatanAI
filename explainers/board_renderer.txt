@@ -1,0 +1,23 @@
+This file contains the BoardRenderer class, which is responsible for rendering the Catan board on the screen. It handles drawing hexagons, settlements, roads, and other game elements. The class calculates the layout of the board and draws it based on the given board data.
+
+Key Components:
+
+Initialization (__init__ method):
+Sets up the screen and board reference.
+Calculates the dimensions for hexagons (hex_height and hex_width).
+Calls calculate_board_layout() to determine how the board is positioned on the screen.
+Board Layout Calculation (calculate_board_layout method):
+Determines the width and height of the entire board based on hexagon size.
+Calculates the left and top positions for the board to center it on the screen.
+Sets the center coordinates of the board.
+Hexagon Drawing (draw_hexagon method):
+Draws a single hexagon at a specified position with a given color.
+Creates six points around the center using trigonometry and draws them as a polygon.
+Adds a black border to the hexagon for better visibility.
+Hexagon Corners Calculation (get_hex_corners method):
+Returns the coordinates of the six corners of a hexagon centered at specified (center_x, center_y).
+Board Drawing (draw_board method):
+Iterates through each tile in the board layout and draws it as a hexagon.
+Colors each hexagon based on its resource type.
+Draws numbers on tiles if they have a value.
+Handles drawing of settlements, roads, and hover effects when in placement mode.

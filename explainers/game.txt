@@ -1,0 +1,59 @@
+Overview:
+The Game class manages the core logic and display of a Catan game. It handles game state, player turns, board layout, resource distribution, and interactions like building settlements, roads, and rolling dice.
+
+Key Responsibilities:
+Initialization:
+
+Sets up the Pygame display, board, players, and game state.
+
+Manages setup and play phases, turn order, and placement modes.
+
+Board Management:
+
+Calculates and draws the hexagonal board layout.
+
+Handles tile, settlement, and road rendering.
+
+Player Interaction:
+
+Processes mouse clicks for dice rolls, building placements, and ending turns.
+
+Manages hover states for settlements and roads.
+
+Game Logic:
+
+Distributes resources based on dice rolls.
+
+Validates and processes building placements.
+
+Manages transitions between setup and main game phases.
+
+Game Loop:
+
+Runs the main loop, handling events, updating the display, and managing game state.
+
+Key Functions:
+__init__: Initializes the game.
+
+draw_board: Renders the board, settlements, and roads.
+
+handle_click: Processes mouse clicks for actions like rolling dice and placing buildings.
+
+distribute_resources: Distributes resources to players after a dice roll.
+
+place_settlement / place_road: Places buildings and updates game state.
+
+run: Main game loop.
+
+Key Variables:
+self.screen: Pygame display surface.
+
+self.board: Game board instance.
+
+self.players: List of players.
+
+self.current_player_index: Index of the current player.
+
+self.game_state: Current game phase (SETUP or PLAY).
+
+self.settlements / self.roads: Tracks placed buildings.

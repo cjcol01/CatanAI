@@ -1,0 +1,24 @@
+Player.py
+Manages player state and actions.
+Class: Player
+Tracks:
+
+Resources and development cards
+Settlements, cities, roads
+Victory points and knights played
+
+Key Methods
+
+Resource management (add/remove/check)
+Building operations (settlement/city/road)
+Cost verification for builds
+Resource/card counting
+
+Dependencies
+
+.enums: ResourceType, DevCardType
+
+Could be split into:
+
+player_resources.py (resource management)
+player_buildings.py (building operations)

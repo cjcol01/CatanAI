@@ -1,0 +1,19 @@
+Dice.py
+Manages dice rolling mechanics and UI elements.
+Class: Dice
+
+Handles dice rolls (2d6)
+Renders roll button and results
+Tracks roll timing for display duration
+
+Methods
+
+roll(): Returns sum of 2d6
+draw_button(): Renders roll button
+draw_roll(): Displays current roll
+handle_click(): Processes button clicks
+
+Dependencies
+
+pygame
+random
