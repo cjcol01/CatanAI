@@ -1,6 +1,7 @@
 from typing import Dict, List, Tuple
 from .enums import ResourceType, DevCardType
 
+
 class Player:
     def __init__(self, color: Tuple[int, int, int], name: str):
         self.color = color
