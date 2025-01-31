@@ -3,14 +3,17 @@ import math
 from .enums import GamePhase, ResourceType
 from .game import *
 from .player import Player
+from .placement import PlacementType
 
 class PlacementManager:
     def __init__(self, game):
         self.game = game
         self.placement_mode = False
 
-    def toggle_placement_mode(self):    
-        self.game.placement_mode = not self.game.placement_mode 
+    def toggle_placement_mode(self):
+        self.game.placement_mode = not self.game.placement_mode
+        if self.game.placement_mode:
+            self.game.placement_type = PlacementType.SETTLEMENT  # Set default placement type when activating
         print(f"Placement mode {'activated' if self.game.placement_mode else 'deactivated'}")
 
     def try_place_settlement(self, pos: Tuple[int, int]) -> bool:
@@ -121,3 +124,49 @@ class PlacementManager:
         self.game.roads[(start, end)] = self.game.current_player_index
         current_player.build_road(start, end)
         print(f"Player {current_player.name} placed a road from {start} to {end}")
+
+    def place_city(self, pos: Tuple[float, float]):
+        """Upgrade a settlement to a city at the specified position."""
+        current_player = self.game.current_player
+        
+        if pos not in self.game.settlements or self.game.settlements[pos] != self.game.current_player_index:
+            print("You can only build a city on your own settlement.")
+            return
+            
+        if self.game.game_phase == GamePhase.PLAY:
+            if not current_player.can_afford_city():
+                print(f"Player {current_player.name} cannot afford a city.")
+                return
+            
+            city_cost = {
+                ResourceType.GRAIN: 2,
+                ResourceType.ORE: 3
+            }
+            current_player.spend_resources(city_cost)
+        
+        # Remove settlement and add city
+        del self.game.settlements[pos]
+        self.game.cities[pos] = self.game.current_player_index
+        current_player.build_city(len(self.game.cities) - 1)
+        print(f"Player {current_player.name} upgraded settlement to city at {pos}")
+
+    def is_valid_city_placement(self, pos: Tuple[float, float]) -> bool:
+        current_player = self.game.current_player
+
+        """Check if a city can be built at the specified position."""
+        if pos not in self.game.settlements:
+            return False
+        if self.game.settlements[pos] != self.game.current_player_index:
+            return False
+        if self.game.game_phase == GamePhase.PLAY:
+            if not current_player.can_afford_city():
+                return False
+        return True
+    
+    def try_place_city(self, pos: Tuple[int, int]) -> bool:
+        if self.game.hovered_settlement:  # Changed from hovered_corner
+            settlement_pos = self.game.hovered_settlement
+            if self.is_valid_city_placement(settlement_pos):
+                self.place_city(settlement_pos)
+                return True
+        return False

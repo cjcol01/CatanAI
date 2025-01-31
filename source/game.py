@@ -57,10 +57,12 @@ class Game:
         # Hover state tracking
         self.hovered_corner: Optional[Tuple[float, float]] = None
         self.hovered_road: Optional[Tuple[Tuple[float, float], Tuple[float, float]]] = None
-        
+        self.hovered_settlement = None
+
         # Game piece storage
         self.settlements = {}  # Maps corner positions to player index
         self.roads = {}  # Maps road endpoints to player index
+        self.cities = {}
         
         self.setup_manager = SetupPhaseManager(self)
         self.placement_manager = PlacementManager(self)
@@ -104,7 +106,20 @@ class Game:
         for (x, y), player_index in self.settlements.items():
             pygame.draw.circle(self.screen, self.players[player_index].color, (int(x), int(y)), 8)
             pygame.draw.circle(self.screen, BLACK, (int(x), int(y)), 8, 2)
+            # Draw highlight if hovering and can afford upgrade
+            if (self.placement_mode and
+                (x, y) == self.hovered_settlement and 
+                player_index == self.current_player_index and 
+                self.current_player.can_afford_city()):
+                pygame.draw.circle(self.screen, self.players[player_index].color, (int(x), int(y)), 12, 2)
 
+        for (x, y), player_index in self.cities.items():
+            city_size = 12
+            player_color = self.players[player_index].color
+            rect = pygame.Rect(int(x) - city_size//2, int(y) - city_size//2, city_size, city_size)
+            pygame.draw.rect(self.screen, player_color, rect)
+            pygame.draw.rect(self.screen, BLACK, rect, 2)
+            
         for (start, end), player_index in self.roads.items():
             road_color = self.players[player_index].color
             # Draw black outline
