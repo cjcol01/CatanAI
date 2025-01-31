@@ -1,6 +1,7 @@
 from typing import Dict, List, Tuple
 from .enums import ResourceType, DevCardType
 
+
 class Player:
     def __init__(self, color: Tuple[int, int, int], name: str):
         self.color = color
@@ -45,6 +46,11 @@ class Player:
             ResourceType.WOOD: 1,
             ResourceType.BRICK: 1
         })
+
+    def can_afford_city(self) -> bool:
+        """Check if player has resources for a city."""
+        return (self.resources.get(ResourceType.GRAIN, 0) >= 2 and 
+                self.resources.get(ResourceType.ORE, 0) >= 3)
 
     def build_settlement(self, position: int):
         self.settlements.append(position)

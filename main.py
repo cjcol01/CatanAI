@@ -1,12 +1,11 @@
-from .game import Game
+from source.game import Game
 
 def main():
     game = Game()
     game.run()
 
-# run commands:
-# cd ..
-# python3 -m Catan.main
+# run command:
+# python3 main.py
 
 if __name__ == "__main__":
     main()

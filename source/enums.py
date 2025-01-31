@@ -33,7 +33,7 @@ class DevCardType(Enum):
     MONOPOLY = auto()
     VICTORY_POINT = auto()
 
-class GameState(Enum):
+class GamePhase(Enum):
     """
     Represents the different states of the game.
     SETUP: Initial phase where players place their first settlements and roads
@@ -73,3 +73,16 @@ class PlacementType(Enum):
     SETTLEMENT = auto()
     ROAD = auto()
     CITY = auto()
+
+class TurnPhase(Enum):
+    """
+    Represents the different phases within a player's turn.
+    ROLL_DICE: Player must roll dice at start of turn
+    MAIN: Main phase where player can build/trade/play cards
+    TRADE: Player is currently in trading phase - future
+    BUILD: Player is currently in building phase
+    """
+    ROLL_DICE = auto()
+    MAIN = auto()
+    TRADE = auto()
+    BUILD = auto()

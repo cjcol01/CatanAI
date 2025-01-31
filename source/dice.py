@@ -33,6 +33,10 @@ class Dice:
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, 50))
             self.screen.blit(text, text_rect)
 
+    def roll_dice(self):
+        """Roll dice directly without button check"""
+        roll_value = self.roll()
+        return roll_value
 
 
     def handle_click(self, pos):
