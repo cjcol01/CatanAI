@@ -31,13 +31,27 @@ class InteractionHandler:
                 self.game.placement_manager.toggle_placement_mode()
 
             if self.game.placement_mode:
-                self.game.placement_manager.try_place_settlement(pos)
-                self.game.placement_manager.try_place_road(pos)
+                # Try settlements first
+                if not self.game.placement_manager.try_place_settlement(pos):
+                    # If settlement placement failed, try roads
+                    if not self.game.placement_manager.try_place_road(pos):
+                        # If road placement failed, try cities
+                        self.game.placement_manager.try_place_city(pos)
 
     def handle_mouse_motion(self, pos: Tuple[int, int]):
         if self.game.placement_mode or self.game.game_phase == GamePhase.SETUP:
             self.game.hovered_corner = None
             self.game.hovered_road = None
+            self.game.hovered_settlement = None  # Add this line
+            
+            # First check settlements that could be upgraded
+            for settlement_pos, player_index in self.game.settlements.items():
+                if (player_index == self.game.current_player_index and 
+                    math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) <= self.game.hover_distance):
+                    self.game.hovered_settlement = settlement_pos
+                    return
+
+            # Then check for new placement positions
             for _, (col, row) in enumerate(self.game.board.layout):
                 x, y = self.game.board.get_hex_center(col, row)
                 corners = self.game.board.get_hex_corners(x, y)

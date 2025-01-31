@@ -47,6 +47,11 @@ class Player:
             ResourceType.BRICK: 1
         })
 
+    def can_afford_city(self) -> bool:
+        """Check if player has resources for a city."""
+        return (self.resources.get(ResourceType.GRAIN, 0) >= 2 and 
+                self.resources.get(ResourceType.ORE, 0) >= 3)
+
     def build_settlement(self, position: int):
         self.settlements.append(position)
         self.victory_points += 1
