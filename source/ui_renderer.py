@@ -1,6 +1,7 @@
 import pygame
 from .constants import *
-from .enums import GameState
+from .enums import ResourceType, DevCardType, GamePhase, PlayerAction, PlacementType
+
 
 class UIRenderer:
     def __init__(self, screen):
@@ -47,36 +48,13 @@ class UIRenderer:
         text_rect = text.get_rect(center=button_rect.center)
         self.screen.blit(text, text_rect)
         return button_rect
-    
-    def draw_setup_instructions(self, game_state, current_setup_action):
-        if game_state == GameState.SETUP_FIRST_ROUND:
-            round_text = "First Round Setup"
-        elif game_state == GameState.SETUP_SECOND_ROUND:
-            round_text = "Second Round Setup"
-        else:
-            return
 
-        action_text = f"Place a {current_setup_action}"
-
-        round_surface = FONT.render(round_text, True, BLACK)
-        action_surface = FONT.render(action_text, True, BLACK)
-        
-        round_rect = round_surface.get_rect(center=(SCREEN_WIDTH // 2, 30))
-        action_rect = action_surface.get_rect(center=(SCREEN_WIDTH // 2, 60))
-        
-        # Draw a background rectangle to cover previous text
-        bg_rect = pygame.Rect(0, 0, SCREEN_WIDTH, 90)
-        pygame.draw.rect(self.screen, BLUE_SEA, bg_rect)
-        
-        self.screen.blit(round_surface, round_rect)
-        self.screen.blit(action_surface, action_rect)
-
-    def draw_current_player(self, current_player):
-        text = FONT.render(f"Current Player: {current_player.name}", True, BLACK)
-        text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 90))
-        
-        # Draw a background rectangle to cover previous text
-        bg_rect = pygame.Rect(0, 75, SCREEN_WIDTH, 30)
-        pygame.draw.rect(self.screen, BLUE_SEA, bg_rect)
-        
-        self.screen.blit(text, text_rect)
+    def draw_current_player(self, current_player, game_phase, placement_type):
+            if game_phase == GamePhase.SETUP:
+                phase_text = f"Setup Phase {'1' if GamePhase.SETUP == 0 else '2'}"
+                action_text = f"Place a {'settlement' if placement_type == PlacementType.SETTLEMENT else 'road'}"
+                text = FONT.render(f"Current Player: {current_player.name} - {phase_text} - {action_text}", True, BLACK)
+            else:
+                text = FONT.render(f"Current Player: {current_player.name}", True, BLACK)
+            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 30))
+            self.screen.blit(text, text_rect)

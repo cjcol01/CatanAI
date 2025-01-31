@@ -1,8 +1,9 @@
 import random
 import math
 from typing import List, Optional, Tuple
-from .enums import ResourceType
-from .constants import TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT
+from .enums import ResourceType, GamePhase
+from .constants import *
+import pygame
 
 class Tile:
     def __init__(self, resource_type: ResourceType, value: Optional[int]):
@@ -17,6 +18,27 @@ class Board:
         self.hex_width = math.sqrt(3) * TILE_SIZE
         self.calculate_board_dimensions()
 
+    def calculate_board_layout(self):
+        """Calculate the dimensions and position of the game board.
+        
+        Sets up the hexagonal grid measurements and positions the board
+        centered on the screen with space for player information.
+        """
+        self.hex_height = TILE_SIZE * 2
+        self.hex_width = math.sqrt(3) * TILE_SIZE
+        
+        # Calculate board dimensions
+        board_width = self.hex_width * 5  # 5 hexes wide
+        board_height = self.hex_height * 4.5  # 5 rows, but they overlap, so it's 4.5 times the height
+        
+        # Calculate board position
+        self.board_left = (SCREEN_WIDTH - board_width) // 2
+        self.board_top = (SCREEN_HEIGHT - board_height) // 2 - self.hex_height // 4  # Adjust for player info at bottom
+
+        # Calculate the center of the board
+        self.board_center_x = SCREEN_WIDTH // 2
+        self.board_center_y = self.board_top + board_height // 2
+        
     def calculate_board_dimensions(self):
         board_width = self.hex_width * 5  # 5 hexes wide
         board_height = self.hex_height * 4.5  # 5 rows, but they overlap
@@ -82,3 +104,13 @@ class Board:
             corner_y = center_y + TILE_SIZE * math.sin(angle_rad)
             corners.append((corner_x, corner_y))
         return corners
+    
+    def draw_hexagon(self, surface: pygame.Surface, color: Tuple[int, int, int], center: Tuple[float, float], size: float):
+        points = []
+        for i in range(6):
+            angle_deg = 60 * i - 30
+            angle_rad = math.pi / 180 * angle_deg
+            points.append((center[0] + size * math.cos(angle_rad),
+                           center[1] + size * math.sin(angle_rad)))
+        pygame.draw.polygon(surface, color, points)
+        pygame.draw.polygon(surface, BLACK, points, 4)
