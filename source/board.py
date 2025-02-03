@@ -5,6 +5,7 @@ from .enums import ResourceType, GamePhase
 from .constants import *
 import pygame
 
+
 class Tile:
     def __init__(self, resource_type: ResourceType, value: Optional[int]):
         self.resource_type = resource_type
@@ -75,11 +76,6 @@ class Board:
 
     def get_tile_at(self, index: int) -> Tile:
         return self.tiles[index]
-
-    def get_adjacent_tiles(self, tile_index: int) -> List[Tile]:
-        # TODO: Implement logic to get adjacent tiles
-        pass
-
 
     def get_adjacent_tiles(self, x: float, y: float) -> List[Tuple[int, Tile]]:
         adjacent_tiles = []

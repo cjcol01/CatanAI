@@ -36,6 +36,7 @@ class Game:
             Player(GREEN, "Green"),
             Player(YELLOW, "Yellow")
         ]
+
         # Game state tracking
         self.current_player_index = 0  # Index of current player in self.players
         self.setup_turns_completed = 0  # Counter for setup phase turns

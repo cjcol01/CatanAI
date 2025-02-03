@@ -54,13 +54,17 @@ class PlacementManager:
         return False
 
     def is_valid_settlement_placement(self, pos: Tuple[float, float]) -> bool:
-        if pos in self.game.settlements:
+        if pos in self.game.settlements or pos in self.game.cities:
             return False
         
         for settlement_pos in self.game.settlements:
             if math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) < self.game.board.hex_width:
                 return False
         
+        for settlement_pos in self.game.cities:
+            if math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) < self.game.board.hex_width:
+                return False
+            
         if self.game.game_phase == GamePhase.PLAY:
             player_roads = [road for road, player in self.game.roads.items() 
                           if player == self.game.current_player_index]
@@ -73,14 +77,6 @@ class PlacementManager:
         return True
 
     def place_settlement(self, pos: Tuple[float, float]):
-        """Place a settlement at the specified position.
-        
-        Args:
-            pos: (x, y) coordinates for the settlement
-            
-        Handles resource costs, updates game state, and distributes
-        initial resources during setup phase.
-        """
         current_player = self.game.current_player
         
         if self.game.game_phase == GamePhase.PLAY:
