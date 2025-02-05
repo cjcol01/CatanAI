@@ -1,6 +1,7 @@
 explainers/*
 .DS_Store
 graphic_dice/*
+hex_test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

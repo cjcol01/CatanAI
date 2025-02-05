@@ -58,11 +58,3 @@ class UIRenderer:
                 text = FONT.render(f"Current Player: {current_player.name}", True, BLACK)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, 30))
             self.screen.blit(text, text_rect)
-
-    def draw_city_button(self, placement_mode):
-        button_rect = pygame.Rect(SCREEN_WIDTH - 160, 10, 150, 30)
-        pygame.draw.rect(self.screen, LIGHT_GRAY, button_rect)
-        text = FONT.render("Build City", True, BLACK)
-        text_rect = text.get_rect(center=button_rect.center)
-        self.screen.blit(text, text_rect)
-        return button_rect
