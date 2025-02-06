@@ -1,10 +1,10 @@
-from typing import Tuple, Dict
+
+from typing import Tuple, Dict, Optional
 import math
 from .enums import GamePhase, ResourceType
 from .game import *
 from .player import Player
 from .placement import PlacementType
-
 class PlacementManager:
     def __init__(self, game):
         self.game = game
@@ -13,7 +13,7 @@ class PlacementManager:
     def toggle_placement_mode(self):
         self.game.placement_mode = not self.game.placement_mode
         if self.game.placement_mode:
-            self.game.placement_type = PlacementType.SETTLEMENT  # Set default placement type when activating
+            self.game.placement_type = PlacementType.SETTLEMENT  # default placement type when activating
         print(f"Placement mode {'activated' if self.game.placement_mode else 'deactivated'}")
 
     def try_place_settlement(self, pos: Tuple[int, int]) -> bool:
@@ -54,13 +54,17 @@ class PlacementManager:
         return False
 
     def is_valid_settlement_placement(self, pos: Tuple[float, float]) -> bool:
-        if pos in self.game.settlements:
+        if pos in self.game.settlements or pos in self.game.cities:
             return False
         
         for settlement_pos in self.game.settlements:
             if math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) < self.game.board.hex_width:
                 return False
         
+        for settlement_pos in self.game.cities:
+            if math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) < self.game.board.hex_width:
+                return False
+            
         if self.game.game_phase == GamePhase.PLAY:
             player_roads = [road for road, player in self.game.roads.items() 
                           if player == self.game.current_player_index]
@@ -73,14 +77,6 @@ class PlacementManager:
         return True
 
     def place_settlement(self, pos: Tuple[float, float]):
-        """Place a settlement at the specified position.
-        
-        Args:
-            pos: (x, y) coordinates for the settlement
-            
-        Handles resource costs, updates game state, and distributes
-        initial resources during setup phase.
-        """
         current_player = self.game.current_player
         
         if self.game.game_phase == GamePhase.PLAY:
@@ -164,7 +160,7 @@ class PlacementManager:
         return True
     
     def try_place_city(self, pos: Tuple[int, int]) -> bool:
-        if self.game.hovered_settlement:  # Changed from hovered_corner
+        if self.game.hovered_settlement: 
             settlement_pos = self.game.hovered_settlement
             if self.is_valid_city_placement(settlement_pos):
                 self.place_city(settlement_pos)
