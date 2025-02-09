@@ -5,6 +5,7 @@ from .enums import GamePhase, ResourceType
 from .game import *
 from .player import Player
 from .placement import PlacementType
+
 class PlacementManager:
     def __init__(self, game):
         self.game = game
