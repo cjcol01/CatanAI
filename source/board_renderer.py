@@ -12,10 +12,8 @@ class BoardRenderer:
 
     def draw_board(self, screen, game_state):
         """Main draw function that handles all board rendering."""
-        self._draw_hex_tiles(screen)
-        
-        if game_state.placement_mode or game_state.game_phase == GamePhase.SETUP:
-            self._draw_vertex_markers(screen, game_state)
+        self._draw_hex_tiles(screen, game_state)
+        self._draw_robber(screen)  # robber drawing before game pieces
         
         # draw game pieces in correct order
         self._draw_roads(screen, game_state.roads, game_state.players)
@@ -24,6 +22,16 @@ class BoardRenderer:
         
         if game_state.placement_mode or game_state.game_phase == GamePhase.SETUP:
             self._draw_placement_indicators(screen, game_state)
+
+    def _draw_robber(self, screen):
+        """Draw the robber on its current tile as a simple circle."""
+        robber_q, robber_r = self.board.axial_layout[self.board.robber_position]
+        x, y = self.board.get_hex_center(robber_q, robber_r)
+        
+        # gray circle black line
+        radius = TILE_SIZE * 0.2
+        pygame.draw.circle(screen, GRAY, (int(x), int(y)), int(radius))
+        pygame.draw.circle(screen, BLACK, (int(x), int(y)), int(radius), 2)
 
     def draw_hexagon(self, surface: pygame.Surface, color: Tuple[int, int, int], 
                     center: Tuple[float, float], size: float):
@@ -37,7 +45,8 @@ class BoardRenderer:
         pygame.draw.polygon(surface, color, points)
         pygame.draw.polygon(surface, BLACK, points, 4)
 
-    def _draw_hex_tiles(self, screen):
+
+    def _draw_hex_tiles(self, screen, game_state):
         """Draw the hexagonal tiles that make up the board."""
         for index, (q, r) in enumerate(self.board.axial_layout):
             tile = self.board.get_tile_at(index)
@@ -45,22 +54,16 @@ class BoardRenderer:
             color = RESOURCE_COLORS[tile.resource_type.name]
             self.draw_hexagon(screen, color, (x, y), TILE_SIZE)
 
+            # show robber placement indicator
+            if game_state.robber_move_pending:
+                mouse_pos = pygame.mouse.get_pos()
+                if math.hypot(mouse_pos[0] - x, mouse_pos[1] - y) <= TILE_SIZE and index != self.board.robber_position:
+                    pygame.draw.circle(screen, BLACK, (int(x), int(y)), int(TILE_SIZE * 0.3), 3)
+
             if tile.value is not None:
                 text = FONT.render(str(tile.value), True, BLACK)
                 text_rect = text.get_rect(center=(x, y))
                 screen.blit(text, text_rect)
-
-    def _draw_vertex_markers(self, screen, game_state):
-        """Draw the vertex markers and hover indicators for settlements."""
-        current_player_color = game_state.players[game_state.current_player_index].color
-        for vertex_px in self.board.vertex_positions:
-            pygame.draw.circle(screen, BLACK, vertex_px, 4)
-            
-            if (game_state.hovered_corner and 
-                math.isclose(vertex_px[0], game_state.hovered_corner[0], abs_tol=1) and 
-                math.isclose(vertex_px[1], game_state.hovered_corner[1], abs_tol=1)):
-                if game_state.placement_manager.is_valid_settlement_placement(vertex_px):
-                    pygame.draw.circle(screen, current_player_color, vertex_px, 10, 2)
 
     def _draw_roads(self, screen, roads, players):
         """Draw all roads on the board."""
@@ -75,12 +78,6 @@ class BoardRenderer:
             x, y = coord
             pygame.draw.circle(screen, game_state.players[player_index].color, (int(x), int(y)), 8)
             pygame.draw.circle(screen, BLACK, (int(x), int(y)), 8, 2)
-            
-            if (game_state.placement_mode and
-                coord == game_state.hovered_settlement and 
-                player_index == game_state.current_player_index and 
-                game_state.current_player.can_afford_city()):
-                pygame.draw.circle(screen, game_state.players[player_index].color, (int(x), int(y)), 12, 2)
 
     def _draw_cities(self, screen, cities, players):
         """Draw all cities on the board."""
@@ -108,10 +105,18 @@ class BoardRenderer:
         if game_state.hovered_corner:
             x, y = game_state.hovered_corner
             if game_state.placement_manager.is_valid_settlement_placement((x, y)):
-                pygame.draw.circle(screen, current_player_color, (int(x), int(y)), 8, 2)
+                pygame.draw.circle(screen, current_player_color, (int(x), int(y)), 10, 4)
+
+        # city hover
+        if game_state.hovered_settlement:
+            x, y = game_state.hovered_settlement
+            if (game_state.placement_mode and 
+                game_state.current_player.can_afford_city()):
+                pygame.draw.circle(screen, current_player_color, (int(x), int(y)), 14, 4)
 
         # road hover
         if game_state.hovered_road:
             start, end = game_state.hovered_road
             if game_state.placement_manager.is_valid_road_placement(start, end):
                 pygame.draw.line(screen, current_player_color, start, end, 4)
+

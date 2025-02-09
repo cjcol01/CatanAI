@@ -3,6 +3,8 @@ import math
 from typing import Tuple
 from .enums import GamePhase
 from .resources import ResourceManager
+from .player import Player
+import pygame
 
 class InteractionHandler:
     def __init__(self, game):
@@ -25,11 +27,17 @@ class InteractionHandler:
                 self.game.end_turn()
             
             placement_mode_rect = self.game.ui_renderer.draw_placement_mode_button(self.game.placement_mode)
-
             if placement_mode_rect.collidepoint(pos):
                 self.game.placement_manager.toggle_placement_mode()
 
             if self.game.placement_mode:
+                # check for dev card button click
+                dev_card_rect = pygame.Rect(20, 20, 150, 40)
+                if dev_card_rect.collidepoint(pos) and self.game.current_player.can_afford_dev():
+                    if self.game.dev_card_manager.buy_dev_card(self.game.current_player):
+                        print(f"Development card purchased successfully!")
+                    return
+
                 # try settlements 
                 if not self.game.placement_manager.try_place_settlement(pos):
                     # if settlement placement failed, try roads
