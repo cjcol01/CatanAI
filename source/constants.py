@@ -1,12 +1,12 @@
 import pygame
 pygame.init()
 
-# Screen dimensions
+# Screen size
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 900
 TILE_SIZE = 60
 
-# Colors
+# colors
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 BLUE_SEA = (127,205,255)
@@ -16,6 +16,7 @@ GREEN = (89, 189, 89)
 YELLOW = (255, 228, 0)
 ORANGE = (255, 165, 0)
 LIGHT_GRAY = (200, 200, 200)
+GRAY = (100,100,100)
 
 # Resource colors
 RESOURCE_COLORS = {

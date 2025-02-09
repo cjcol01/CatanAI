@@ -23,6 +23,7 @@ class Board:
         self.vertex_positions = {}
         self.edge_positions = {}
         self._init_vertices_and_edges()
+        self.robber_position = self._find_desert_tile()
 
     def _init_vertices_and_edges(self):
         """Initialize vertex and edge positions with their coordinates."""
@@ -172,3 +173,23 @@ class Board:
                 # print(f"Found potential edge: {edge} with distance {dist}")  # Debug print
 
         return nearest
+    
+    def _find_desert_tile(self) -> int:
+        """Find the index of the desert tile."""
+        for idx, tile in enumerate(self.tiles):
+            if tile.resource_type == ResourceType.DESERT:
+                return idx
+        return 0
+
+    def move_robber(self, new_position: int) -> bool:
+        if 0 <= new_position < len(self.tiles):
+            self.robber_position = new_position
+            return True
+        return False
+
+    def _find_desert_tile(self):
+        """Find the index of the desert tile."""
+        for idx, tile in enumerate(self.tiles):
+            if tile.resource_type == ResourceType.DESERT:
+                return idx
+        return 0

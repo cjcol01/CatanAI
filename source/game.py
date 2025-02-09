@@ -13,7 +13,7 @@ from .placement import *
 from .mouse import InteractionHandler
 from .resources import ResourceManager
 from .board_renderer import BoardRenderer
-
+from .dev_card import DevCardManager
 
 class Game:
     """Main game class that handles the Catan game logic and display.
@@ -73,23 +73,49 @@ class Game:
         self.resource_manager = ResourceManager(self)
         self.board_renderer = BoardRenderer(self.board)
 
+        self.dev_card_manager = DevCardManager(self)
+        self.dev_card_deck = []
+
+        self.robber_move_pending = False  # track if robber needs to be moved
+
         self.board.calculate_board_dimensions()
 
     @property
     def current_player(self):
-        """Get the current player based on the current_player_index."""
         return self.players[self.current_player_index]
-
+    
     def end_turn(self):
         if not self.dice_rolled_this_turn:
             print("You must roll the dice before ending your turn.")
             return
-
+        
+        if self.robber_move_pending:
+            print("You must move the robber before ending your turn")
+            return
+            
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self.dice_rolled_this_turn = False
         self.placement_mode = False
         print(f"Turn ended. Current player: {self.current_player.name}")
         
+    def handle_robber_tile_click(self, mouse_pos):
+        """Handle clicking on a tile to move the robber."""
+        if not self.robber_move_pending:
+            return
+            
+        # find which tile was clicked
+        for idx, (q, r) in enumerate(self.board.axial_layout):
+            x, y = self.board.get_hex_center(q, r)
+            
+            # check if click is within hex bounds
+            if math.hypot(mouse_pos[0] - x, mouse_pos[1] - y) <= TILE_SIZE:
+                if idx != self.board.robber_position:  # dont let place robber on same tile
+                    self.board.move_robber(idx)
+                    self.robber_move_pending = False
+                    print(f"Moved robber to tile {idx}")
+                    # TODO: stealing from players 
+                break
+
     def run(self):
         running = True
         while running:
@@ -97,7 +123,10 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.interaction_handler.handle_click(event.pos)
+                    if self.robber_move_pending:
+                        self.handle_robber_tile_click(event.pos)
+                    else:
+                        self.interaction_handler.handle_click(event.pos)
                 elif event.type == pygame.MOUSEMOTION:
                     self.interaction_handler.handle_mouse_motion(event.pos)
                 elif event.type == pygame.KEYDOWN:
@@ -111,7 +140,13 @@ class Game:
                             if roll_value is not None:
                                 print(f"Rolled: {roll_value}")
                                 self.dice_rolled_this_turn = True
-                                self.resource_manager.distribute_resources(roll_value, self.players)
+                                
+                                if roll_value == 7:
+                                    print("Seven rolled! Move the robber to a new tile.")
+                                    self.robber_move_pending = True
+                                    # TODO: implement discard cards for players with >7 cards
+                                else:
+                                    self.resource_manager.distribute_resources(roll_value, self.players)
                     elif event.key == pygame.K_e:
                         self.end_turn()
 
@@ -120,10 +155,18 @@ class Game:
             self.ui_renderer.draw_player_info(self.players)
             self.ui_renderer.draw_current_player(self.current_player, self.game_phase, self.placement_type)
             
+            # robber message
+            if self.robber_move_pending:
+                self.ui_renderer.status_messages.append("Click a tile to move the robber")
+            
+            # all status messages
+            self.ui_renderer.draw_status_messages()
+            
             if self.game_phase == GamePhase.PLAY:
                 self.ui_renderer.draw_end_turn_button(self.dice_rolled_this_turn)
                 self.ui_renderer.draw_placement_mode_button(self.placement_mode)
-                
+                self.ui_renderer.draw_buy_dev_card_button(self.placement_mode, self.current_player)
+
                 if not self.dice_rolled_this_turn:
                     self.dice.draw_button()
                 self.dice.draw_roll()

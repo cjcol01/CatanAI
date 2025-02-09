@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from .enums import ResourceType, DevCardType
-
+import random
 
 class Player:
     def __init__(self, color: Tuple[int, int, int], name: str):
@@ -52,6 +52,7 @@ class Player:
         return (self.resources.get(ResourceType.GRAIN, 0) >= 2 and 
                 self.resources.get(ResourceType.ORE, 0) >= 3)
 
+
     def build_settlement(self, position: int):
         self.settlements.append(position)
         self.victory_points += 1
@@ -70,3 +71,8 @@ class Player:
 
     def get_dev_card_count(self) -> int:
         return sum(self.dev_cards.values())
+    
+    def can_afford_dev(self):
+        return (self.resources.get(ResourceType.GRAIN, 0) >= 1 and 
+                self.resources.get(ResourceType.ORE, 0) >= 1 and
+                self.resources.get(ResourceType.WOOL, 0) >= 1)
