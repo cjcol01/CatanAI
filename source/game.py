@@ -14,6 +14,7 @@ from .mouse import InteractionHandler
 from .resources import ResourceManager
 from .board_renderer import BoardRenderer
 from .dev_card import DevCardManager
+from .victory_points import VictoryPointManager
 
 class Game:
     """Main game class that handles the Catan game logic and display.
@@ -77,26 +78,30 @@ class Game:
         self.dev_card_deck = []
 
         self.robber_move_pending = False  # track if robber needs to be moved
+        self.victory_point_manager = VictoryPointManager(self)
 
         self.board.calculate_board_dimensions()
 
     @property
     def current_player(self):
         return self.players[self.current_player_index]
-    
+        
     def end_turn(self):
         if not self.dice_rolled_this_turn:
             print("You must roll the dice before ending your turn.")
             return
-        
+            
         if self.robber_move_pending:
             print("You must move the robber before ending your turn")
+            return
+
+        # Check for winner before advancing turn
+        if self.victory_point_manager.update_victory_points():
             return
             
         self.current_player_index = (self.current_player_index + 1) % len(self.players)
         self.dice_rolled_this_turn = False
         self.placement_mode = False
-        print(f"Turn ended. Current player: {self.current_player.name}")
         
     def handle_robber_tile_click(self, mouse_pos):
         """Handle clicking on a tile to move the robber."""
@@ -116,6 +121,13 @@ class Game:
                     # TODO: stealing from players 
                 break
 
+    def handle_winner(self, winner_index: int):
+        winner = self.players[winner_index]
+        self.game_phase = GamePhase.END
+        self.ui_renderer.clear_messages()
+        self.ui_renderer.add_persistent_message(f"Game Over! {winner.name} wins with {winner.calculate_total_victory_points()} points!")
+        self.ui_renderer.add_persistent_message("Press ESC to exit")
+
     def run(self):
         running = True
         while running:
@@ -123,43 +135,44 @@ class Game:
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.robber_move_pending:
-                        self.handle_robber_tile_click(event.pos)
-                    else:
-                        self.interaction_handler.handle_click(event.pos)
+                    if self.game_phase != GamePhase.END:
+                        if self.robber_move_pending:
+                            self.handle_robber_tile_click(event.pos)
+                        else:
+                            self.interaction_handler.handle_click(event.pos)
                 elif event.type == pygame.MOUSEMOTION:
-                    self.interaction_handler.handle_mouse_motion(event.pos)
+                    if self.game_phase != GamePhase.END:
+                        self.interaction_handler.handle_mouse_motion(event.pos)
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE: 
+                    if event.key == pygame.K_ESCAPE:
                         running = False
-                    elif event.key == pygame.K_f:
-                        self.resource_manager.give_all_resources_cheat()
-                    elif event.key == pygame.K_r:
-                        if not self.dice_rolled_this_turn:
-                            roll_value = self.dice.roll_dice() 
-                            if roll_value is not None:
-                                print(f"Rolled: {roll_value}")
-                                self.dice_rolled_this_turn = True
-                                
-                                if roll_value == 7:
-                                    print("Seven rolled! Move the robber to a new tile.")
-                                    self.robber_move_pending = True
-                                    # TODO: implement discard cards for players with >7 cards
-                                else:
-                                    self.resource_manager.distribute_resources(roll_value, self.players)
-                    elif event.key == pygame.K_e:
-                        self.end_turn()
+                    elif self.game_phase != GamePhase.END:
+                        if event.key == pygame.K_f:
+                            self.resource_manager.give_all_resources_cheat()
+                        elif event.key == pygame.K_r:
+                            if not self.dice_rolled_this_turn:
+                                roll_value = self.dice.roll_dice()
+                                if roll_value is not None:
+                                    print(f"Rolled: {roll_value}")
+                                    self.dice_rolled_this_turn = True
+                                    
+                                    if roll_value == 7:
+                                        print("Seven rolled! Move the robber to a new tile.")
+                                        self.robber_move_pending = True
+                                    else:
+                                        self.resource_manager.distribute_resources(roll_value, self.players)
+                        elif event.key == pygame.K_e:
+                            self.end_turn()
 
+            # Draw game state
             self.screen.fill(BLUE_SEA)
             self.board_renderer.draw_board(self.screen, self)
             self.ui_renderer.draw_player_info(self.players)
             self.ui_renderer.draw_current_player(self.current_player, self.game_phase, self.placement_type)
             
-            # robber message
             if self.robber_move_pending:
                 self.ui_renderer.status_messages.append("Click a tile to move the robber")
             
-            # all status messages
             self.ui_renderer.draw_status_messages()
             
             if self.game_phase == GamePhase.PLAY:

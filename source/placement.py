@@ -78,7 +78,9 @@ class PlacementManager:
         return True
 
     def place_settlement(self, pos: Tuple[float, float]):
+        """Place a settlement at the given position."""
         current_player = self.game.current_player
+        axial_pos = self.game.board.pixel_to_axial(*pos)
         
         if self.game.game_phase == GamePhase.PLAY:
             if not current_player.can_afford_settlement():
@@ -94,7 +96,7 @@ class PlacementManager:
             current_player.spend_resources(settlement_cost)
         
         self.game.settlements[pos] = self.game.current_player_index
-        current_player.build_settlement(len(self.game.settlements) - 1)
+        current_player.build_settlement(axial_pos)
         print(f"Player {current_player.name} placed a settlement at {pos}")
         
         if self.game.game_phase == GamePhase.SETUP and self.game.setup_manager.setup_phase == 1:
@@ -103,6 +105,8 @@ class PlacementManager:
                 if tile.resource_type != ResourceType.DESERT:
                     current_player.add_resource(tile.resource_type)
                     print(f"Player {current_player.name} received 1 {tile.resource_type.name} for initial settlement")
+
+        self.game.victory_point_manager.update_victory_points()
 
     def place_road(self, start: Tuple[float, float], end: Tuple[float, float]):
         current_player = self.game.current_player
@@ -123,29 +127,23 @@ class PlacementManager:
         print(f"Player {current_player.name} placed a road from {start} to {end}")
 
     def place_city(self, pos: Tuple[float, float]):
-        """Upgrade a settlement to a city at the specified position."""
         current_player = self.game.current_player
+        axial_pos = self.game.board.pixel_to_axial(*pos)
         
         if pos not in self.game.settlements or self.game.settlements[pos] != self.game.current_player_index:
-            print("You can only build a city on your own settlement.")
             return
             
         if self.game.game_phase == GamePhase.PLAY:
             if not current_player.can_afford_city():
-                print(f"Player {current_player.name} cannot afford a city.")
                 return
-            
-            city_cost = {
-                ResourceType.GRAIN: 2,
-                ResourceType.ORE: 3
-            }
+            city_cost = {ResourceType.GRAIN: 2, ResourceType.ORE: 3}
             current_player.spend_resources(city_cost)
         
-        # Remove settlement and add city
         del self.game.settlements[pos]
         self.game.cities[pos] = self.game.current_player_index
-        current_player.build_city(len(self.game.cities) - 1)
+        current_player.build_city(axial_pos)
         print(f"Player {current_player.name} upgraded settlement to city at {pos}")
+        self.game.victory_point_manager.update_victory_points()
 
     def is_valid_city_placement(self, pos: Tuple[float, float]) -> bool:
         current_player = self.game.current_player
@@ -161,7 +159,7 @@ class PlacementManager:
         return True
     
     def try_place_city(self, pos: Tuple[int, int]) -> bool:
-        if self.game.hovered_settlement: 
+        if self.game.hovered_settlement:
             settlement_pos = self.game.hovered_settlement
             if self.is_valid_city_placement(settlement_pos):
                 self.place_city(settlement_pos)

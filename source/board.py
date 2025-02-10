@@ -193,3 +193,18 @@ class Board:
             if tile.resource_type == ResourceType.DESERT:
                 return idx
         return 0
+    
+    def pixel_to_axial(self, x: float, y: float) -> Tuple[int, int]:
+        """Convert pixel coordinates to axial coordinates"""
+        # reverse hex_center calculation
+        x_offset = (x - self.board_center_x) 
+        y_offset = (y - self.board_center_y)
+        
+        r = round((y_offset) / (self.hex_height * 0.75))
+        q = round(x_offset/self.hex_width - r/2)
+        
+        return (q, r)
+
+    def axial_to_pixel(self, q: int, r: int) -> Tuple[float, float]:
+        """Convert axial coordinates to pixel coordinates"""
+        return self.get_hex_center(q, r)

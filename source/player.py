@@ -13,6 +13,10 @@ class Player:
         self.roads: List[Tuple[int, int]] = []
         self.knights_played: int = 0
         self.victory_points: int = 0
+        self.has_longest_road = False
+        self.has_largest_army = False
+        self.visible_victory_points = 0 
+        self.hidden_victory_points = 0    # from dev cards
 
     def add_resource(self, resource_type: ResourceType, amount: int = 1):
         self.resources[resource_type] += amount
@@ -52,17 +56,16 @@ class Player:
         return (self.resources.get(ResourceType.GRAIN, 0) >= 2 and 
                 self.resources.get(ResourceType.ORE, 0) >= 3)
 
-
-    def build_settlement(self, position: int):
+    def build_settlement(self, position: Tuple[int, int]):
         self.settlements.append(position)
-        self.victory_points += 1
+        self.visible_victory_points = self.calculate_visible_victory_points()
 
-    def build_city(self, position: int):
+    def build_city(self, position: Tuple[int, int]):
         if position in self.settlements:
             self.settlements.remove(position)
             self.cities.append(position)
-            self.victory_points += 1
-
+        self.visible_victory_points = self.calculate_visible_victory_points()
+        
     def build_road(self, start: int, end: int):
         self.roads.append((start, end))
 
@@ -76,3 +79,24 @@ class Player:
         return (self.resources.get(ResourceType.GRAIN, 0) >= 1 and 
                 self.resources.get(ResourceType.ORE, 0) >= 1 and
                 self.resources.get(ResourceType.WOOL, 0) >= 1)
+    
+    def calculate_building_points(self) -> int:
+        points = len(self.settlements) + (len(self.cities) * 2)
+        print(f"{self.name} has {len(self.settlements)} settlements and {len(self.cities)} cities for {points} points")
+        return points
+
+        
+    def calculate_total_victory_points(self) -> int:
+        """Calculate total victory points including hidden ones"""
+        points = self.calculate_building_points()
+        points += 2 if self.has_longest_road else 0
+        points += 2 if self.has_largest_army else 0
+        points += self.hidden_victory_points
+        return points
+    
+    def calculate_visible_victory_points(self) -> int:
+        """Calculate victory points visible to other players"""
+        points = self.calculate_building_points()
+        points += 2 if self.has_longest_road else 0
+        points += 2 if self.has_largest_army else 0
+        return points

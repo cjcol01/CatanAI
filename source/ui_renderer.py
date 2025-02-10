@@ -6,11 +6,15 @@ from .enums import ResourceType, DevCardType, GamePhase, PlayerAction, Placement
 class UIRenderer:
     def __init__(self, screen):
         self.screen = screen
-        self.status_messages = []
+        self.message_queue = []
+        self.persistent_messages = [] 
+        self.current_player_message = None  # current player message separately
+
         self.BASE_LINE_HEIGHT = 20  # height of each line 
         self.PADDING = 10 
         self.SECTION_SPACING = 10  # gap between resources and dev
         self.current_info_height = 0  
+        self.game_over = False
 
     def calculate_player_box_height(self, player):
         """Calculate required height for player info box based on content."""
@@ -105,18 +109,62 @@ class UIRenderer:
             return button_rect
 
     def draw_current_player(self, current_player, game_phase, placement_type):
+        if game_phase == GamePhase.END:
+            return
+            
+        message = f"Current Player: {current_player.name}"
         if game_phase == GamePhase.SETUP:
             phase_text = f"Setup Phase {'1' if GamePhase.SETUP == 0 else '2'}"
             action_text = f"Place a {'settlement' if placement_type == PlacementType.SETTLEMENT else 'road'}"
-            self.status_messages.append(f"Current Player: {current_player.name} - {phase_text} - {action_text}")
-        else:
-            self.status_messages.append(f"Current Player: {current_player.name}")
+            message = f"{message} - {phase_text} - {action_text}"
+        
+        self.set_current_player_message(message)
+
+    def add_message(self, text, duration=2000):
+        # Add only if not duplicate
+        if not any(msg['text'] == text for msg in self.message_queue):
+            self.message_queue.append({
+                'text': text,
+                'timestamp': pygame.time.get_ticks(),
+                'duration': duration
+            })
+
+    def set_current_player_message(self, text):
+        self.current_player_message = text
 
     def draw_status_messages(self):
+        current_time = pygame.time.get_ticks()
+        # clean expired
+        self.message_queue = [msg for msg in self.message_queue 
+                            if current_time - msg['timestamp'] < msg['duration']]
+        
         y_offset = 30
-        for message in self.status_messages:
-            text = FONT.render(message, True, BLACK)
+
+        # current player
+        if self.current_player_message:
+            text = FONT.render(self.current_player_message, True, BLACK)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
             self.screen.blit(text, text_rect)
             y_offset += 35
-        self.status_messages = []
+
+        # temporary messages
+        for msg in self.message_queue:
+            text = FONT.render(msg['text'], True, BLACK)
+            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            self.screen.blit(text, text_rect)
+            y_offset += 35
+
+        # persistent messages last
+        for msg in self.persistent_messages:
+            text = FONT.render(msg, True, BLACK)
+            text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
+            self.screen.blit(text, text_rect)
+            y_offset += 35
+
+    def add_persistent_message(self, text):
+        self.add_message(text, float('inf'))
+
+    def clear_messages(self):
+        self.message_queue = []
+        self.persistent_messages = []
+        self.current_player_message = []
