@@ -30,5 +30,21 @@ class ResourceManager:
         if self.game.game_phase == GamePhase.PLAY:
             for resource in ResourceType:
                 if resource != ResourceType.DESERT:  # skip desert
+                    self.game.current_player.add_resource(resource) # clearly the best way of doing this
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
+                    self.game.current_player.add_resource(resource)
                     self.game.current_player.add_resource(resource)
                     print(f"Gave {self.game.current_player.name} 1 {resource.name}")
