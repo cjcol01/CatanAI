@@ -4,8 +4,10 @@ from .enums import ResourceType, DevCardType, GamePhase, PlayerAction, Placement
 
 
 class UIRenderer:
-    def __init__(self, screen):
+    def __init__(self, screen, game):
         self.screen = screen
+        self.game = game 
+
         self.message_queue = []
         self.persistent_messages = [] 
         self.current_player_message = None  # current player message separately
@@ -15,26 +17,8 @@ class UIRenderer:
         self.SECTION_SPACING = 10  # gap between resources and dev
         self.current_info_height = 0  
         self.game_over = False
-
-    def calculate_player_box_height(self, player):
-        """Calculate required height for player info box based on content."""
-        height = self.PADDING 
-        
-        # height for resources - always shown
-        resource_count = len([r for r in ResourceType if r != ResourceType.DESERT])
-        height += resource_count * self.BASE_LINE_HEIGHT
-        
-        # spacing if there are dev cards
-        if any(amount > 0 for amount in player.dev_cards.values()):
-            height += self.SECTION_SPACING
-            
-        # height for dev cards
-        dev_card_count = sum(1 for amount in player.dev_cards.values() if amount > 0)
-        if dev_card_count > 0:
-            height += dev_card_count * self.BASE_LINE_HEIGHT
-            
-        height += self.PADDING
-        return height
+        self.COLUMN_SPACING = 0 
+        self.COLUMN_WIDTH = 100
 
     def draw_player_info(self, players):
         player_width = SCREEN_WIDTH // 4
@@ -42,37 +26,52 @@ class UIRenderer:
         
         # calc max height needed
         for player in players:
-            height = self.calculate_player_box_height(player)
+            resource_lines = len([r for r in ResourceType if r != ResourceType.DESERT])
+            dev_card_lines = sum(1 for amount in player.dev_cards.values() if amount > 0)
+            total_lines = max(resource_lines, dev_card_lines)
+            # add line for the titles
+            height = self.PADDING * 2 + (total_lines + 1) * self.BASE_LINE_HEIGHT
             max_height = max(max_height, height)
         
-        # store height for other methods
         self.current_info_height = max_height
         
         # draw player boxes
         for i, player in enumerate(players):
             x = i * player_width
             y = SCREEN_HEIGHT - max_height
+            
+            # Basic box
             pygame.draw.rect(self.screen, player.color, (x, y, player_width, max_height))
             pygame.draw.rect(self.screen, BLACK, (x, y, player_width, max_height), 2)
             
-            # draw resources
+            # make left column narrower (40%) and right column (60%)
+            left_col_width = int(player_width * 0.4)
+            right_col_width = player_width - left_col_width
+            
+            # draw titles
             text_y = y + self.PADDING
+            resources_title = FONT.render("Resources", True, BLACK)
+            dev_cards_title = FONT.render("Dev Cards", True, BLACK)
+            self.screen.blit(resources_title, (x + self.PADDING, text_y))
+            self.screen.blit(dev_cards_title, (x + left_col_width + self.PADDING, text_y))
+            text_y += self.BASE_LINE_HEIGHT
+            
+            # draw resources in left col
+            resources_y = text_y
             for resource in ResourceType:
                 if resource != ResourceType.DESERT:
                     amount = player.resources[resource]
                     text = FONT.render(f"{resource.name}: {amount}", True, BLACK)
-                    self.screen.blit(text, (x + self.PADDING, text_y))
-                    text_y += self.BASE_LINE_HEIGHT
+                    self.screen.blit(text, (x + self.PADDING, resources_y))
+                    resources_y += self.BASE_LINE_HEIGHT
             
-            # draw dev cards if player has any
-            has_dev_cards = any(amount > 0 for amount in player.dev_cards.values())
-            if has_dev_cards:
-                text_y += self.SECTION_SPACING
-                for dev_card, amount in player.dev_cards.items():
-                    if amount > 0:
-                        text = FONT.render(f"{dev_card.name}: {amount}", True, BLACK)
-                        self.screen.blit(text, (x + self.PADDING, text_y))
-                        text_y += self.BASE_LINE_HEIGHT
+            # draw dev cards in right col
+            dev_cards_y = text_y
+            for dev_card, amount in player.dev_cards.items():
+                if amount > 0:
+                    text = FONT.render(f"{dev_card.name}: {amount}", True, BLACK)
+                    self.screen.blit(text, (x + left_col_width + self.PADDING, dev_cards_y))
+                    dev_cards_y += self.BASE_LINE_HEIGHT
 
     def draw_end_turn_button(self, dice_rolled):
         if dice_rolled:
@@ -121,7 +120,7 @@ class UIRenderer:
         self.set_current_player_message(message)
 
     def add_message(self, text, duration=2000):
-        # Add only if not duplicate
+        # add only if not duplicate
         if not any(msg['text'] == text for msg in self.message_queue):
             self.message_queue.append({
                 'text': text,

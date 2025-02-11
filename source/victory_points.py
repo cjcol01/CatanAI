@@ -6,8 +6,8 @@ class VictoryPointManager:
     
     def __init__(self, game):
         self.game = game
-        self.longest_road_holder: Optional[int] = None  # Player index
-        self.largest_army_holder: Optional[int] = None  # Player index
+        self.longest_road_holder: Optional[int] = None
+        self.largest_army_holder: Optional[int] = None
         self.min_road_length_for_longest = 5
         self.min_knights_for_largest = 3
         
@@ -28,7 +28,7 @@ class VictoryPointManager:
         longest_length = self.min_road_length_for_longest - 1
         new_holder = None
         
-        # Find player with longest road >= minimum length
+        # player with longest road >= minimum length
         for i, player in enumerate(self.game.players):
             road_length = self._calculate_longest_road_length(player)
             if road_length >= self.min_road_length_for_longest:
@@ -36,9 +36,9 @@ class VictoryPointManager:
                     longest_length = road_length
                     new_holder = i
                 elif road_length == longest_length and current_holder == i:
-                    new_holder = i  # Current holder keeps card in case of tie
+                    new_holder = i  # current holder keeps card when tied
         
-        # Update longest road card holder
+        # update longest road 
         if new_holder != current_holder:
             if current_holder is not None:
                 self.game.players[current_holder].has_longest_road = False
@@ -52,16 +52,16 @@ class VictoryPointManager:
         largest_army = self.min_knights_for_largest - 1
         new_holder = None
         
-        # Find player with most knights >= minimum
+        # ffind player with most knights
         for i, player in enumerate(self.game.players):
             if player.knights_played >= self.min_knights_for_largest:
                 if player.knights_played > largest_army:
                     largest_army = player.knights_played
                     new_holder = i
                 elif player.knights_played == largest_army and current_holder == i:
-                    new_holder = i  # Current holder keeps card in case of tie
+                    new_holder = i  # current holder keeps card wjen tied
         
-        # Update largest army card holder
+        # update largest army
         if new_holder != current_holder:
             if current_holder is not None:
                 self.game.players[current_holder].has_largest_army = False
