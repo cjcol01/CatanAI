@@ -82,7 +82,7 @@ class Player:
     
     def calculate_building_points(self) -> int:
         points = len(self.settlements) + (len(self.cities) * 2)
-        print(f"{self.name} has {len(self.settlements)} settlements and {len(self.cities)} cities for {points} points")
+        print(f"{self.name} has {len(self.settlements)} settlements and {len(self.cities)} cities for {points} points\n")
         return points
 
         

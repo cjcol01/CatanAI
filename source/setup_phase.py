@@ -19,7 +19,7 @@ class SetupPhaseManager:
             if self.game.current_player_index == 0:
                 self.setup_phase = 1
                 self.setup_direction = -1
-                self.game.current_player_index = len(self.game.players) - 1  # Start with the last player
+                self.game.current_player_index = len(self.game.players) - 1  # start with last player
         elif self.setup_phase == 1:
             self.game.current_player_index = (self.game.current_player_index + self.setup_direction) % len(self.game.players)
         
@@ -32,7 +32,7 @@ class SetupPhaseManager:
     def end_setup_phase(self):
         self.game.game_phase = GamePhase.PLAY
         self.game.placement_mode = False
-        self.game.current_player_index = 0  # Start the main game with the first player
+        self.game.current_player_index = 0  # start main game with the first player
         print("Setup phase complete. Starting main game phase.")
 
     def handle_setup_phase(self):

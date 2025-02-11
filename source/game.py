@@ -15,6 +15,7 @@ from .resources import ResourceManager
 from .board_renderer import BoardRenderer
 from .dev_card import DevCardManager
 from .victory_points import VictoryPointManager
+from .robber import RobberManager
 
 class Game:
     """Main game class that handles the Catan game logic and display.
@@ -69,7 +70,7 @@ class Game:
         
         self.setup_manager = SetupPhaseManager(self)
         self.placement_manager = PlacementManager(self)
-        self.ui_renderer = UIRenderer(self.screen)
+        self.ui_renderer = UIRenderer(self.screen, self)
         self.interaction_handler = InteractionHandler(self)
         self.resource_manager = ResourceManager(self)
         self.board_renderer = BoardRenderer(self.board)
@@ -77,7 +78,7 @@ class Game:
         self.dev_card_manager = DevCardManager(self)
         self.dev_card_deck = []
 
-        self.robber_move_pending = False  # track if robber needs to be moved
+        self.robber_manager = RobberManager(self)
         self.victory_point_manager = VictoryPointManager(self)
 
         self.board.calculate_board_dimensions()
@@ -91,11 +92,11 @@ class Game:
             print("You must roll the dice before ending your turn.")
             return
             
-        if self.robber_move_pending:
+        if self.robber_manager.move_pending:
             print("You must move the robber before ending your turn")
             return
 
-        # Check for winner before advancing turn
+        # check for winner before advancing turn
         if self.victory_point_manager.update_victory_points():
             return
             
@@ -104,22 +105,8 @@ class Game:
         self.placement_mode = False
         
     def handle_robber_tile_click(self, mouse_pos):
-        """Handle clicking on a tile to move the robber."""
-        if not self.robber_move_pending:
-            return
-            
-        # find which tile was clicked
-        for idx, (q, r) in enumerate(self.board.axial_layout):
-            x, y = self.board.get_hex_center(q, r)
-            
-            # check if click is within hex bounds
-            if math.hypot(mouse_pos[0] - x, mouse_pos[1] - y) <= TILE_SIZE:
-                if idx != self.board.robber_position:  # dont let place robber on same tile
-                    self.board.move_robber(idx)
-                    self.robber_move_pending = False
-                    print(f"Moved robber to tile {idx}")
-                    # TODO: stealing from players 
-                break
+        """Forward robber tile clicks to the RobberManager."""
+        return self.robber_manager._handle_tile_click(mouse_pos)
 
     def handle_winner(self, winner_index: int):
         winner = self.players[winner_index]
@@ -136,7 +123,9 @@ class Game:
                     running = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if self.game_phase != GamePhase.END:
-                        if self.robber_move_pending:
+                        if self.robber_manager.stealing_pending:
+                            self.robber_manager.handle_click(event.pos)
+                        elif self.robber_manager.move_pending:
                             self.handle_robber_tile_click(event.pos)
                         else:
                             self.interaction_handler.handle_click(event.pos)
@@ -157,22 +146,21 @@ class Game:
                                     self.dice_rolled_this_turn = True
                                     
                                     if roll_value == 7:
-                                        print("Seven rolled! Move the robber to a new tile.")
-                                        self.robber_move_pending = True
+                                        self.robber_manager.handle_seven_rolled()
                                     else:
                                         self.resource_manager.distribute_resources(roll_value, self.players)
                         elif event.key == pygame.K_e:
                             self.end_turn()
 
-            # Draw game state
+            # draw game state
             self.screen.fill(BLUE_SEA)
             self.board_renderer.draw_board(self.screen, self)
             self.ui_renderer.draw_player_info(self.players)
             self.ui_renderer.draw_current_player(self.current_player, self.game_phase, self.placement_type)
-            
-            if self.robber_move_pending:
-                self.ui_renderer.status_messages.append("Click a tile to move the robber")
-            
+ 
+ 
+            if self.robber_manager.move_pending:
+                self.ui_renderer.add_message("Click a tile to move the robber")          
             self.ui_renderer.draw_status_messages()
             
             if self.game_phase == GamePhase.PLAY:
@@ -183,7 +171,9 @@ class Game:
                 if not self.dice_rolled_this_turn:
                     self.dice.draw_button()
                 self.dice.draw_roll()
-            
+
+            if self.robber_manager.stealing_pending:
+                self.robber_manager.draw_stealing_interface(self.screen)
             pygame.display.flip()
             self.clock.tick(60)
 

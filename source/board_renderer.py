@@ -13,7 +13,7 @@ class BoardRenderer:
     def draw_board(self, screen, game_state):
         """Main draw function that handles all board rendering."""
         self._draw_hex_tiles(screen, game_state)
-        self._draw_robber(screen)  # robber drawing before game pieces
+        game_state.robber_manager.draw_robber(screen) 
         
         # draw game pieces in correct order
         self._draw_roads(screen, game_state.roads, game_state.players)
@@ -22,16 +22,6 @@ class BoardRenderer:
         
         if game_state.placement_mode or game_state.game_phase == GamePhase.SETUP:
             self._draw_placement_indicators(screen, game_state)
-
-    def _draw_robber(self, screen):
-        """Draw the robber on its current tile as a simple circle."""
-        robber_q, robber_r = self.board.axial_layout[self.board.robber_position]
-        x, y = self.board.get_hex_center(robber_q, robber_r)
-        
-        # gray circle black line
-        radius = TILE_SIZE * 0.2
-        pygame.draw.circle(screen, GRAY, (int(x), int(y)), int(radius))
-        pygame.draw.circle(screen, BLACK, (int(x), int(y)), int(radius), 2)
 
     def draw_hexagon(self, surface: pygame.Surface, color: Tuple[int, int, int], 
                     center: Tuple[float, float], size: float):
@@ -45,7 +35,6 @@ class BoardRenderer:
         pygame.draw.polygon(surface, color, points)
         pygame.draw.polygon(surface, BLACK, points, 4)
 
-
     def _draw_hex_tiles(self, screen, game_state):
         """Draw the hexagonal tiles that make up the board."""
         for index, (q, r) in enumerate(self.board.axial_layout):
@@ -54,11 +43,9 @@ class BoardRenderer:
             color = RESOURCE_COLORS[tile.resource_type.name]
             self.draw_hexagon(screen, color, (x, y), TILE_SIZE)
 
-            # show robber placement indicator
-            if game_state.robber_move_pending:
-                mouse_pos = pygame.mouse.get_pos()
-                if math.hypot(mouse_pos[0] - x, mouse_pos[1] - y) <= TILE_SIZE and index != self.board.robber_position:
-                    pygame.draw.circle(screen, BLACK, (int(x), int(y)), int(TILE_SIZE * 0.3), 3)
+            # show robber placement indicator using robber manager
+            if game_state.robber_manager.move_pending:
+                game_state.robber_manager.draw_placement_indicator(screen, pygame.mouse.get_pos())
 
             if tile.value is not None:
                 text = FONT.render(str(tile.value), True, BLACK)
@@ -119,4 +106,3 @@ class BoardRenderer:
             start, end = game_state.hovered_road
             if game_state.placement_manager.is_valid_road_placement(start, end):
                 pygame.draw.line(screen, current_player_color, start, end, 4)
-
