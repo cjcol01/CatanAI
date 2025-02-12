@@ -75,14 +75,8 @@ class PlacementType(Enum):
     CITY = auto()
 
 class TurnPhase(Enum):
-    """
-    Represents the different phases within a player's turn.
-    ROLL_DICE: Player must roll dice at start of turn
-    MAIN: Main phase where player can build/trade/play cards
-    TRADE: Player is currently in trading phase - future
-    BUILD: Player is currently in building phase
-    """
-    ROLL_DICE = auto()
-    MAIN = auto()
-    TRADE = auto()
-    BUILD = auto()
+    PRE_ROLL = auto()    # beginning of turn, can play dev cards
+    ROBBER = auto()      # after rolling 7, must move robber
+    POST_ROLL = auto()   # after rolling, can build/trade/etc
+    TRADING = auto()     # during trade negotiation
+    END = auto()         # turn is complete

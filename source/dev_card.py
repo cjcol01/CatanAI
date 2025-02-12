@@ -1,37 +1,39 @@
-from typing import List, Optional, Dict
+from typing import Optional
 import random
 from .enums import DevCardType, ResourceType
 from .player import Player
 
-
 class DevCardManager:
-    """Manages all development card related functionality in the game."""
+    """manages all development card related functionality"""
     
     def __init__(self, game):
         self.game = game
-        self.dev_card_deck: List[DevCardType] = []
-        self._initialize_dev_card_deck()
-
-    def _initialize_dev_card_deck(self):
-        """Initialize the development card deck with standard Catan distribution."""
-        self.dev_card_deck = (
+        self.initial_deck = (
             [DevCardType.KNIGHT] * 14 +
             [DevCardType.VICTORY_POINT] * 5 +
             [DevCardType.ROAD_BUILDING] * 2 +
             [DevCardType.YEAR_OF_PLENTY] * 2 +
             [DevCardType.MONOPOLY] * 2
         )
-        random.shuffle(self.dev_card_deck)
+        random.shuffle(self.initial_deck)
+
+    def init_deck(self):
+        """initialize the dev card deck with standard distribution"""
+        self.game.game_state.dev_card_deck = self.initial_deck.copy()
+        self.game.update_game_state()
 
     def draw_dev_card(self) -> Optional[DevCardType]:
-        """Draw a development card from the deck if available."""
-        if not self.dev_card_deck:
+        """draw a card from the deck if available"""
+        if not self.game.game_state.dev_card_deck:
             print("No development cards left in the deck!")
             return None
-        return self.dev_card_deck.pop()
+            
+        card = self.game.game_state.dev_card_deck.pop()
+        self.game.update_game_state()
+        return card
 
     def buy_dev_card(self, player: Player) -> bool:
-        """Handle the purchase of a development card by a player."""
+        """handle dev card purchase attempt"""
         dev_cost = {
             ResourceType.GRAIN: 1,
             ResourceType.WOOL: 1,
@@ -39,22 +41,21 @@ class DevCardManager:
         }
         
         # check if any cards in deck
-        if not self.dev_card_deck:
+        if not self.game.game_state.dev_card_deck:
             print("No development cards left in the deck!")
             return False
             
-        # player can afford the card
+        # check if player can afford
         if not player.has_resources(dev_cost):
             print(f"Player {player.name} cannot afford a development card!")
             return False
             
         player.spend_resources(dev_cost)
         
-        # draw card from deck
+        # draw and add to hand
         drawn_card = self.draw_dev_card()
-                
-        # add card to player hand
         player.dev_cards[drawn_card] += 1
         print(f"Player {player.name} bought a {drawn_card.name} card!")
         
+        self.game.update_game_state()
         return True

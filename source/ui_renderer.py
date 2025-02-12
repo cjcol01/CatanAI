@@ -2,7 +2,6 @@ import pygame
 from .constants import *
 from .enums import ResourceType, DevCardType, GamePhase, PlayerAction, PlacementType
 
-
 class UIRenderer:
     def __init__(self, screen, game):
         self.screen = screen
@@ -10,11 +9,11 @@ class UIRenderer:
 
         self.message_queue = []
         self.persistent_messages = [] 
-        self.current_player_message = None  # current player message separately
+        self.current_player_message = None
 
-        self.BASE_LINE_HEIGHT = 20  # height of each line 
+        self.BASE_LINE_HEIGHT = 20
         self.PADDING = 10 
-        self.SECTION_SPACING = 10  # gap between resources and dev
+        self.SECTION_SPACING = 10
         self.current_info_height = 0  
         self.game_over = False
         self.COLUMN_SPACING = 0 
@@ -29,7 +28,6 @@ class UIRenderer:
             resource_lines = len([r for r in ResourceType if r != ResourceType.DESERT])
             dev_card_lines = sum(1 for amount in player.dev_cards.values() if amount > 0)
             total_lines = max(resource_lines, dev_card_lines)
-            # add line for the titles
             height = self.PADDING * 2 + (total_lines + 1) * self.BASE_LINE_HEIGHT
             max_height = max(max_height, height)
         
@@ -40,11 +38,10 @@ class UIRenderer:
             x = i * player_width
             y = SCREEN_HEIGHT - max_height
             
-            # Basic box
+            # basic box
             pygame.draw.rect(self.screen, player.color, (x, y, player_width, max_height))
             pygame.draw.rect(self.screen, BLACK, (x, y, player_width, max_height), 2)
             
-            # make left column narrower (40%) and right column (60%)
             left_col_width = int(player_width * 0.4)
             right_col_width = player_width - left_col_width
             
@@ -94,7 +91,6 @@ class UIRenderer:
         return button_rect
 
     def draw_buy_dev_card_button(self, placement_mode, current_player):
-        """Draw the buy development card button if in placement mode."""
         if placement_mode:
             button_rect = pygame.Rect(20, 20, 150, 40)
             color = GREEN if current_player.can_afford_dev() else LIGHT_GRAY
@@ -107,20 +103,19 @@ class UIRenderer:
             self.screen.blit(text, text_rect)
             return button_rect
 
-    def draw_current_player(self, current_player, game_phase, placement_type):
-        if game_phase == GamePhase.END:
+    def draw_current_player(self, game):
+        if game.game_state.game_phase == GamePhase.END:
             return
             
-        message = f"Current Player: {current_player.name}"
-        if game_phase == GamePhase.SETUP:
-            phase_text = f"Setup Phase {'1' if GamePhase.SETUP == 0 else '2'}"
-            action_text = f"Place a {'settlement' if placement_type == PlacementType.SETTLEMENT else 'road'}"
+        message = f"Current Player: {game.current_player.name}"
+        if game.game_state.game_phase == GamePhase.SETUP:
+            phase_text = f"Setup Phase {'1' if game.game_state.setup_phase == 0 else '2'}"
+            action_text = f"Place a {'settlement' if game.game_state.placement_type == PlacementType.SETTLEMENT else 'road'}"
             message = f"{message} - {phase_text} - {action_text}"
         
         self.set_current_player_message(message)
 
     def add_message(self, text, duration=2000):
-        # add only if not duplicate
         if not any(msg['text'] == text for msg in self.message_queue):
             self.message_queue.append({
                 'text': text,
@@ -133,27 +128,23 @@ class UIRenderer:
 
     def draw_status_messages(self):
         current_time = pygame.time.get_ticks()
-        # clean expired
         self.message_queue = [msg for msg in self.message_queue 
                             if current_time - msg['timestamp'] < msg['duration']]
         
         y_offset = 30
 
-        # current player
         if self.current_player_message:
             text = FONT.render(self.current_player_message, True, BLACK)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
             self.screen.blit(text, text_rect)
             y_offset += 35
 
-        # temporary messages
         for msg in self.message_queue:
             text = FONT.render(msg['text'], True, BLACK)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
             self.screen.blit(text, text_rect)
             y_offset += 35
 
-        # persistent messages last
         for msg in self.persistent_messages:
             text = FONT.render(msg, True, BLACK)
             text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_offset))
