@@ -1,76 +1,73 @@
-# interaction_handler.py
 import math
 from typing import Tuple
 from .enums import GamePhase
-from .resources import ResourceManager
-from .player import Player
 import pygame
 
 class InteractionHandler:
     def __init__(self, game):
         self.game = game
-        self.resource_manager = ResourceManager(self.game)
 
     def handle_click(self, pos: Tuple[int, int]):
-        if self.game.game_phase == GamePhase.SETUP:
+        """handle all mouse clicks during the game"""
+        if self.game.game_state.game_phase == GamePhase.SETUP:
             self.game.setup_manager.handle_setup_phase()
-        elif self.game.game_phase == GamePhase.PLAY:
-            if not self.game.dice_rolled_this_turn:
+            
+        elif self.game.game_state.game_phase == GamePhase.PLAY:
+            # try rolling dice first if not rolled
+            if not self.game.game_state.dice_rolled:
                 roll_value = self.game.dice.handle_click(pos)
                 if roll_value is not None:
-                    print(f"Rolled: {roll_value}")
-                    self.game.dice_rolled_this_turn = True
-                    self.resource_manager.distribute_resources(roll_value, self.game.players)
+                    print(f"rolled: {roll_value}")
+                    self.game.game_state.dice_rolled = True
+                    self.game.resource_manager.distribute_resources(roll_value, self.game.players)
             
-            end_turn_rect = self.game.ui_renderer.draw_end_turn_button(self.game.dice_rolled_this_turn)
-            if end_turn_rect is not None and end_turn_rect.collidepoint(pos) and self.game.dice_rolled_this_turn:
+            # check end turn button
+            end_turn_rect = self.game.ui_renderer.draw_end_turn_button(self.game.game_state.dice_rolled)
+            if end_turn_rect is not None and end_turn_rect.collidepoint(pos) and self.game.game_state.dice_rolled:
                 self.game.end_turn()
             
-            placement_mode_rect = self.game.ui_renderer.draw_placement_mode_button(self.game.placement_mode)
+            # check placement mode toggle
+            placement_mode_rect = self.game.ui_renderer.draw_placement_mode_button(self.game.game_state.placement_mode)
             if placement_mode_rect.collidepoint(pos):
                 self.game.placement_manager.toggle_placement_mode()
 
-            if self.game.placement_mode:
-                # check for dev card button click
+            # handle placement mode actions
+            if self.game.game_state.placement_mode:
+                # try buying dev card
                 dev_card_rect = pygame.Rect(20, 20, 150, 40)
                 if dev_card_rect.collidepoint(pos) and self.game.current_player.can_afford_dev():
                     if self.game.dev_card_manager.buy_dev_card(self.game.current_player):
-                        print(f"Development card purchased successfully!")
+                        print(f"development card purchased successfully!")
                     return
 
-                # try settlements 
+                # try building things in order
                 if not self.game.placement_manager.try_place_settlement(pos):
-                    # if settlement placement failed, try roads
                     if not self.game.placement_manager.try_place_road(pos):
-                        # if road placement failed, try cities
                         self.game.placement_manager.try_place_city(pos)
 
     def handle_mouse_motion(self, pos: Tuple[int, int]):
-        if self.game.placement_mode or self.game.game_phase == GamePhase.SETUP:
-            self.game.hovered_corner = None
-            self.game.hovered_road = None
-            self.game.hovered_settlement = None
+        """handle hover effects when mouse moves"""
+        if self.game.game_state.placement_mode or self.game.game_state.game_phase == GamePhase.SETUP:
+            # clear previous hover states
+            self.game.game_state.hovered_corner = None
+            self.game.game_state.hovered_road = None
+            self.game.game_state.hovered_settlement = None
             
-            # check settlements first
-            for settlement_pos, player_index in self.game.settlements.items():
-                if (player_index == self.game.current_player_index and 
-                    math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) <= self.game.hover_distance):
-                    self.game.hovered_settlement = settlement_pos
-                    # print("Found settlement hover")
+            # check settlement upgrade first
+            for settlement_pos, player_index in self.game.game_state.settlements.items():
+                if (player_index == self.game.game_state.current_player_index and 
+                    math.hypot(pos[0] - settlement_pos[0], pos[1] - settlement_pos[1]) <= self.game.game_state.hover_distance):
+                    self.game.game_state.hovered_settlement = settlement_pos
                     return
 
-            # check for vertex hover
-            nearest_vertex = self.game.board.find_nearest_vertex(pos, self.game.hover_distance)
+            # then check for new settlement spots
+            nearest_vertex = self.game.board.find_nearest_vertex(pos, self.game.game_state.hover_distance)
             if nearest_vertex:
-                self.game.hovered_corner = nearest_vertex
-                # print(f"Found vertex hover at {nearest_vertex}")
+                self.game.game_state.hovered_corner = nearest_vertex
                 return
                 
-            # check for edge hover
-            nearest_edge = self.game.board.find_nearest_edge(pos, self.game.hover_distance)
+            # finally check for road spots
+            nearest_edge = self.game.board.find_nearest_edge(pos, self.game.game_state.hover_distance)
             if nearest_edge:
-                self.game.hovered_road = nearest_edge
-                # print(f"Found edge hover at {nearest_edge}")
+                self.game.game_state.hovered_road = nearest_edge
                 return
-            # else:
-            #     print("No edge found")  # Debug print

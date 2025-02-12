@@ -2,17 +2,17 @@ from typing import List, Optional
 from .player import Player
 
 class VictoryPointManager:
-    """Manages victory point tracking and special card assignments"""
+    """tracks victory points and special cards"""
     
     def __init__(self, game):
         self.game = game
-        self.longest_road_holder: Optional[int] = None
-        self.largest_army_holder: Optional[int] = None
         self.min_road_length_for_longest = 5
         self.min_knights_for_largest = 3
+        self.longest_road_holder = None  # tracks who has longest road card
+        self.largest_army_holder = None  # tracks who has largest army card
         
     def update_victory_points(self):
-        """Check for winner after any point changes."""
+        """check if anyone has won after point changes"""
         self._update_longest_road()
         self._update_largest_army()
         
@@ -23,12 +23,12 @@ class VictoryPointManager:
         return False
         
     def _update_longest_road(self):
-        """Update longest road card holder"""
+        """figure out who gets longest road card"""
         current_holder = self.longest_road_holder
         longest_length = self.min_road_length_for_longest - 1
         new_holder = None
         
-        # player with longest road >= minimum length
+        # find longest road >= minimum length
         for i, player in enumerate(self.game.players):
             road_length = self._calculate_longest_road_length(player)
             if road_length >= self.min_road_length_for_longest:
@@ -36,45 +36,53 @@ class VictoryPointManager:
                     longest_length = road_length
                     new_holder = i
                 elif road_length == longest_length and current_holder == i:
-                    new_holder = i  # current holder keeps card when tied
+                    new_holder = i  # keep card on tie
         
-        # update longest road 
+        # update card holder 
         if new_holder != current_holder:
             if current_holder is not None:
                 self.game.players[current_holder].has_longest_road = False
             if new_holder is not None:
                 self.game.players[new_holder].has_longest_road = True
             self.longest_road_holder = new_holder
+            if hasattr(self.game, 'game_state'):
+                self.game.game_state.longest_road_holder = new_holder
+                self.game.update_game_state()
     
     def _update_largest_army(self):
-        """Update largest army card holder"""
+        """figure out who gets largest army card"""
         current_holder = self.largest_army_holder
         largest_army = self.min_knights_for_largest - 1
         new_holder = None
         
-        # ffind player with most knights
+        # find most knights >= minimum
         for i, player in enumerate(self.game.players):
             if player.knights_played >= self.min_knights_for_largest:
                 if player.knights_played > largest_army:
                     largest_army = player.knights_played
                     new_holder = i
                 elif player.knights_played == largest_army and current_holder == i:
-                    new_holder = i  # current holder keeps card wjen tied
+                    new_holder = i  # keep card on tie
         
-        # update largest army
+        # update card holder
         if new_holder != current_holder:
             if current_holder is not None:
                 self.game.players[current_holder].has_largest_army = False
             if new_holder is not None:
                 self.game.players[new_holder].has_largest_army = True
             self.largest_army_holder = new_holder
+            if hasattr(self.game, 'game_state'):
+                self.game.game_state.largest_army_holder = new_holder
+                self.game.update_game_state()
     
     def _calculate_longest_road_length(self, player: Player) -> int:
-        """Calculate the length of the longest continuous road for a player"""
-        # placehodler, just return the total number of roads
+        """get longest continuous road length"""
+        # todo: implement actual road length calculation
         return len(player.roads)
     
     def add_victory_point_card(self, player_index: int):
-        """Add a victory point from a development card"""
+        """add point from victory point dev card"""
         self.game.players[player_index].hidden_victory_points += 1
-        self.update_victory_points()  # winner after adding VP?
+        if hasattr(self.game, 'game_state'):
+            self.game.update_game_state()
+        self.update_victory_points()  # check for winner
